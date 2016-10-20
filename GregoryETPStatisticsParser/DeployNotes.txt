@@ -1,0 +1,11 @@
+﻿1.In Windows 7 and Windows Server, open the Developer Command Prompt under Visual Studio Tools in the Start menu
+ In Windows 8 or Windows 8.1, choose the Visual Studio Tools tile on the Start screen, and then run Developer Command Prompt with administrative credentials.
+
+2. In the Command Prompt window, navigate to the folder that contains your project's output. ../GregoryETPStatisticsParser/
+
+3. Enter the following command:
+installutil.exe GregoryETPStatisticsParser.exe
+
+
+4. To uninstall Enter the following command:
+installutil.exe /u GregoryETPStatisticsParser.exe

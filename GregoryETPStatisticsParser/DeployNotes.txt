@@ -12,3 +12,5 @@ installutil.exe /u GregoryETPStatisticsParser.exe
 
 Troubleshooting:
 1. Check the project output type is set to Windows app
+
+TODO: Create Setup Project

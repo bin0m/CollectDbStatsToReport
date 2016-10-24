@@ -38,15 +38,14 @@ namespace GregoryETPStatisticsParser
         };
 
         System.Timers.Timer MainActionTimer;
-        DateTime ScheduleTimeToStart;
+        DateTime ScheduleTimeToStart = DateTime.Now.AddSeconds(10);
         const int mainIntervalInSeconds = 30 ;
         const string pathLogFile = @"ParserLog.txt";
 
         public ServiceGregory()
         {
             InitializeComponent();
-            MainActionTimer = new System.Timers.Timer();
-            ScheduleTimeToStart = DateTime.Today.AddSeconds(10); 
+            MainActionTimer = new System.Timers.Timer();          
         }
 
         protected override void OnStart(string[] args)
@@ -57,11 +56,24 @@ namespace GregoryETPStatisticsParser
             serviceStatus.dwWaitHint = 100000;
             SetServiceStatus(this.ServiceHandle, ref serviceStatus);
 
-            File.AppendAllText(pathLogFile, "Service started " + DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss"));
+            File.AppendAllText(pathLogFile, "Service started " + DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss") + "\n");
 
             // For first time, set amount of seconds between current time and schedule time
             MainActionTimer.Enabled = true;
-            MainActionTimer.Interval = ScheduleTimeToStart.Subtract(DateTime.Now).TotalSeconds * 1000;
+
+            double nextRunInterval = ScheduleTimeToStart.Subtract(DateTime.Now).TotalSeconds;
+
+            //if scheduled time in future
+            if (nextRunInterval > 0)
+            {
+                MainActionTimer.Interval = nextRunInterval * 1000;
+            }
+            else
+            {
+                // if scheduled time is in past, then start immidiatley 
+                MainActionTimer.Interval = 1;
+            }
+            
             MainActionTimer.Elapsed += new System.Timers.ElapsedEventHandler(Timer_Elapsed);
 
             // Update the service state to Running.
@@ -71,7 +83,7 @@ namespace GregoryETPStatisticsParser
 
         protected void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
         {
-            File.AppendAllText(pathLogFile, "Service timer action started " + DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss"));
+            File.AppendAllText(pathLogFile, "Service timer action started " + DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss") + "\n");
 
             // 1. Process Schedule Task
             // ----------------------------------
@@ -97,7 +109,7 @@ namespace GregoryETPStatisticsParser
             serviceStatus.dwCurrentState = ServiceState.SERVICE_STOPPED;
             SetServiceStatus(this.ServiceHandle, ref serviceStatus);
 
-            File.AppendAllText(pathLogFile, "Service stopped " + DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss"));
+            File.AppendAllText(pathLogFile, "Service stopped " + DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss") + "\n");
         }
 
         internal void TestStartupAndStop(string[] args)

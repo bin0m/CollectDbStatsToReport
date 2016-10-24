@@ -3,9 +3,12 @@
 
 2. In the Command Prompt window, navigate to the folder that contains your project's output. ../GregoryETPStatisticsParser/
 
-3. Enter the following command:
+3. To INSTALL enter the following command:
 installutil.exe GregoryETPStatisticsParser.exe
 
 
-4. To uninstall Enter the following command:
+4. To UNINSTALL Enter the following command:
 installutil.exe /u GregoryETPStatisticsParser.exe
+
+Troubleshooting:
+1. Check the project output type is set to Windows app

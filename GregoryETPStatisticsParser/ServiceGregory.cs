@@ -99,5 +99,12 @@ namespace GregoryETPStatisticsParser
 
             File.AppendAllText(pathLogFile, "Service stopped " + DateTime.Now.ToString("dd/MM/yyyy hh:mm:ss"));
         }
+
+        internal void TestStartupAndStop(string[] args)
+        {
+            this.OnStart(args);
+            Console.ReadLine();
+            this.OnStop();
+        }
     }
 }

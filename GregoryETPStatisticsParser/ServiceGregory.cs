@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.Configuration;
 using System.Data;
-using System.Diagnostics;
+using System.Data.SqlClient;
 using System.Linq;
 using System.ServiceProcess;
 using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using System.IO;
 
@@ -89,6 +88,48 @@ namespace GregoryETPStatisticsParser
             // ----------------------------------
             // Add code to Process your task here
             // ----------------------------------
+
+            var connectionStr = ConfigurationManager.ConnectionStrings["Main"].ConnectionString;
+
+            string sql = "SELECT TOP 100 p.PurchaseNumber, FullTitle, OrganizerID, AuctionStartDate, BargainTypeID, inn, arbitrageManagerID, arbitrageTribunalNumber, PurchaseStatusID from Purchase p join bankruptDetails bd on p.purchaseID = bd.purchaseID  where PurchaseStatusID in (5,7,14) OR p.PurchaseID = @PurchaseID";
+
+            DataTable dt = new DataTable();
+
+            using (SqlConnection connection = new SqlConnection(connectionStr))
+            {
+                connection.Open();
+
+                using (SqlCommand command = new SqlCommand(sql, connection))
+                {
+                    var idParam = new SqlParameter("PurchaseID", SqlDbType.Int);
+                    idParam.Value = 1432;
+
+                    command.Parameters.Add(idParam);
+
+
+                    using (SqlDataAdapter adapter = new SqlDataAdapter(command))
+                    {
+                        adapter.Fill(dt);
+                    }
+
+                    StringBuilder sb = new StringBuilder();
+
+                    IEnumerable<string> columnNames = dt.Columns.Cast<DataColumn>().
+                                                      Select(column => column.ColumnName);
+                    sb.AppendLine(string.Join(",", columnNames));
+
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        //IEnumerable<string> fields = row.ItemArray.Select(field => string.Concat("\"", field.ToString().Replace("\"", "\"\""), "\""));
+                        IEnumerable<string> fields = row.ItemArray.Select(field => field.ToString());
+                        sb.AppendLine(string.Join(",", fields));
+                    }
+
+                    File.WriteAllText("out.csv", sb.ToString());
+
+                    //var results = command.ExecuteReader();
+                }
+            }
 
 
             // 2. If tick for the first time, reset next run to Const Interval

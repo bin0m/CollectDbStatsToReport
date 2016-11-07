@@ -89,9 +89,18 @@ namespace GregoryETPStatisticsParser
             // Add code to Process your task here
             // ----------------------------------
 
+            const string csvDelimeter = "\t";
             var connectionStr = ConfigurationManager.ConnectionStrings["Main"].ConnectionString;
 
-            string sql = "SELECT TOP 100 p.PurchaseNumber, FullTitle, OrganizerID, AuctionStartDate, BargainTypeID, inn, arbitrageManagerID, arbitrageTribunalNumber, PurchaseStatusID from Purchase p join bankruptDetails bd on p.purchaseID = bd.purchaseID  where PurchaseStatusID in (5,7,14) OR p.PurchaseID = @PurchaseID";
+            string sql = "SELECT TOP 10 p.PurchaseNumber, FullTitle, OrganizerID, party.ContactName, AuctionStartDate, p.BargainTypeID, bt.Name, bd.inn, LEFT(bd.inn,2) AS Region,kladr.NAME AS RegionName,  arbitrageManagerID, (am.LastName+ ' '+ am.FirstName+' '+ am.MiddleName) AS arbitrageManagerName , arbitrageTribunalNumber, p.PurchaseStatusID, ps.PurchaseStatusDesc "
++ "from Purchase p "
++ "Inner join bankruptDetails bd  on p.purchaseID = bd.purchaseID "
++ "Inner join Party party on p.OrganizerID = party.PartyID "
++ "Inner join ArbitrageManager am on bd.ArbitrageManagerID = am.ManagerID "
++ "Inner join BargainType bt on p.BargainTypeID = bt.BargainTypeID "
++ "Inner join PurchaseStatus ps on p.PurchaseStatusID = ps.PurchaseStatusID "
++ "Inner join KLADR kladr on kladr.CODE = (LEFT(bd.inn,2)+'00000000000') "
++ "where p.PurchaseStatusID in (5,7,14) ";
 
             DataTable dt = new DataTable();
 
@@ -113,21 +122,25 @@ namespace GregoryETPStatisticsParser
                     }
 
                     StringBuilder sb = new StringBuilder();
+                    //sb.Append(csvDelimeter);
 
                     IEnumerable<string> columnNames = dt.Columns.Cast<DataColumn>().
                                                       Select(column => column.ColumnName);
-                    sb.AppendLine(string.Join(",", columnNames));
+                    sb.AppendLine(string.Join(csvDelimeter, columnNames));
 
                     foreach (DataRow row in dt.Rows)
                     {
                         //IEnumerable<string> fields = row.ItemArray.Select(field => string.Concat("\"", field.ToString().Replace("\"", "\"\""), "\""));
-                        IEnumerable<string> fields = row.ItemArray.Select(field => field.ToString());
-                        sb.AppendLine(string.Join(",", fields));
+                        // IEnumerate every field, and also prevent being csvDelimeter in the field value
+                        IEnumerable<string> fields = row.ItemArray.Select(field => field.ToString().Replace(csvDelimeter, " ").Replace("\n", " ").Replace("\r", " "));
+                        sb.AppendLine(string.Join(csvDelimeter, fields));
                     }
 
                     File.WriteAllText("out.csv", sb.ToString());
 
                     //var results = command.ExecuteReader();
+
+                    //var email = results.GetString(0);
                 }
             }
 

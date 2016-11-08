@@ -92,7 +92,7 @@ namespace GregoryETPStatisticsParser
             const string csvDelimeter = "\t";
             var connectionStr = ConfigurationManager.ConnectionStrings["Main"].ConnectionString;
 
-            string sql = "SELECT TOP 10 p.PurchaseNumber, FullTitle, OrganizerID, party.ContactName, AuctionStartDate, p.BargainTypeID, bt.Name, bd.inn, LEFT(bd.inn,2) AS Region,kladr.NAME AS RegionName,  arbitrageManagerID, (am.LastName+ ' '+ am.FirstName+' '+ am.MiddleName) AS arbitrageManagerName , arbitrageTribunalNumber, p.PurchaseStatusID, ps.PurchaseStatusDesc "
+            string sql = "SELECT p.PurchaseNumber, FullTitle, party.ContactName, AuctionStartDate, bt.Name AS BargainTypeName, bd.inn, LEFT(bd.inn,2) AS Region,kladr.NAME AS RegionName,  (am.LastName+ ' '+ am.FirstName+' '+ am.MiddleName) AS arbitrageManagerName , arbitrageTribunalNumber, ps.PurchaseStatusDesc "
 + "from Purchase p "
 + "Inner join bankruptDetails bd  on p.purchaseID = bd.purchaseID "
 + "Inner join Party party on p.OrganizerID = party.PartyID "
@@ -103,6 +103,19 @@ namespace GregoryETPStatisticsParser
 + "where p.PurchaseStatusID in (5,7,14) ";
 
             DataTable dt = new DataTable();
+
+            Dictionary<string, string> columnHeaders = new Dictionary<string, string>();
+            columnHeaders.Add("PurchaseNumber", "Номер торга");
+            columnHeaders.Add("FullTitle", "Наименование");
+            columnHeaders.Add("ContactName", "Организатор");
+            columnHeaders.Add("AuctionStartDate", "Дата проведения");
+            columnHeaders.Add("BargainTypeName", "Тип торга");
+            columnHeaders.Add("inn", "ИНН");
+            columnHeaders.Add("Region", "Регион");
+            columnHeaders.Add("RegionName", "Имя Региона");
+            columnHeaders.Add("arbitrageManagerName", "Арбитражный управляющий");
+            columnHeaders.Add("arbitrageTribunalNumber", "Номер дела");
+            columnHeaders.Add("PurchaseStatusDesc", "Статус торга");
 
             using (SqlConnection connection = new SqlConnection(connectionStr))
             {

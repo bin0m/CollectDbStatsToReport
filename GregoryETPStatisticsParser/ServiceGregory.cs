@@ -90,23 +90,29 @@ namespace GregoryETPStatisticsParser
             // ----------------------------------
 
             const string csvDelimeter = "\t";
+            const int skipFirstColumns = 1;
             var connectionStr = ConfigurationManager.ConnectionStrings["Main"].ConnectionString;
 
-            string sql = "SELECT p.PurchaseNumber, FullTitle, party.ContactName, AuctionStartDate, bt.Name AS BargainTypeName, bd.inn, LEFT(bd.inn,2) AS Region,kladr.NAME AS RegionName,  (am.LastName+ ' '+ am.FirstName+' '+ am.MiddleName) AS arbitrageManagerName , arbitrageTribunalNumber, ps.PurchaseStatusDesc "
-+ "from Purchase p "
-+ "Inner join bankruptDetails bd  on p.purchaseID = bd.purchaseID "
+            string sql = "select LotID, p.PurchaseNumber, LotNumber, lot.Title AS LotTitle, PersistedInitalContractPriceValue, party.ContactName, p.FullTitle, p.AuctionStartDate, bt.Name AS BargainTypeName, bd.inn, LEFT(bd.inn,2) AS Region,kladr.NAME AS RegionName,  (am.LastName+ ' '+ am.FirstName+' '+ am.MiddleName) AS arbitrageManagerName , arbitrageTribunalNumber, ps.PurchaseStatusDesc "
++ "from purchaseLot lot "
++ "Inner join PurchaseStatus ps on lot.PurchaseStatusID = ps.PurchaseStatusID "
++ "Inner join BargainType bt on lot.BargainTypeID = bt.BargainTypeID  "
++ "Inner join Purchase p  on lot.purchaseID = p.purchaseID "
++ "Inner join BankruptDetails bd  on p.purchaseID = bd.purchaseID "
 + "Inner join Party party on p.OrganizerID = party.PartyID "
 + "Inner join ArbitrageManager am on bd.ArbitrageManagerID = am.ManagerID "
-+ "Inner join BargainType bt on p.BargainTypeID = bt.BargainTypeID "
-+ "Inner join PurchaseStatus ps on p.PurchaseStatusID = ps.PurchaseStatusID "
 + "Inner join KLADR kladr on kladr.CODE = (LEFT(bd.inn,2)+'00000000000') "
-+ "where p.PurchaseStatusID in (5,7,14) ";
++ "where lot.PurchaseStatusID in (5,7,14) "
++ "order by p.AuctionStartDate DESC";
 
             DataTable dt = new DataTable();
 
             Dictionary<string, string> columnHeaders = new Dictionary<string, string>();
             columnHeaders.Add("PurchaseNumber", "Номер торга");
-            columnHeaders.Add("FullTitle", "Наименование");
+            columnHeaders.Add("LotNumber", "Номер лота");
+            columnHeaders.Add("LotTitle", "Наименование лота");
+            columnHeaders.Add("FullTitle", "Наименование торгов");
+            columnHeaders.Add("PersistedInitalContractPriceValue", "Начальная цена");
             columnHeaders.Add("ContactName", "Организатор");
             columnHeaders.Add("AuctionStartDate", "Дата проведения");
             columnHeaders.Add("BargainTypeName", "Тип торга");
@@ -123,10 +129,9 @@ namespace GregoryETPStatisticsParser
 
                 using (SqlCommand command = new SqlCommand(sql, connection))
                 {
-                    var idParam = new SqlParameter("PurchaseID", SqlDbType.Int);
-                    idParam.Value = 1432;
-
-                    command.Parameters.Add(idParam);
+                    //var idParam = new SqlParameter("PurchaseID", SqlDbType.Int);
+                    //idParam.Value = 1432;
+                    //command.Parameters.Add(idParam);
 
 
                     using (SqlDataAdapter adapter = new SqlDataAdapter(command))
@@ -138,18 +143,19 @@ namespace GregoryETPStatisticsParser
                     //sb.Append(csvDelimeter);
 
                     IEnumerable<string> columnNames = dt.Columns.Cast<DataColumn>().
-                                                      Select(column => column.ColumnName);
-                    sb.AppendLine(string.Join(csvDelimeter, columnNames));
+                                                      Select(column => column.ColumnName).Skip(skipFirstColumns);
+                    IEnumerable<string> columnNamesUserFriendly = columnNames.Select(name => columnHeaders.ContainsKey(name) ? columnHeaders[name] : name);
+                    sb.AppendLine(string.Join(csvDelimeter, columnNamesUserFriendly));
 
                     foreach (DataRow row in dt.Rows)
                     {
                         //IEnumerable<string> fields = row.ItemArray.Select(field => string.Concat("\"", field.ToString().Replace("\"", "\"\""), "\""));
                         // IEnumerate every field, and also prevent being csvDelimeter in the field value
-                        IEnumerable<string> fields = row.ItemArray.Select(field => field.ToString().Replace(csvDelimeter, " ").Replace("\n", " ").Replace("\r", " "));
+                        IEnumerable<string> fields = row.ItemArray.Select(field => field.ToString().Replace(csvDelimeter, " ").Replace("\n", " ").Replace("\r", " ")).Skip(skipFirstColumns);
                         sb.AppendLine(string.Join(csvDelimeter, fields));
                     }
 
-                    File.WriteAllText("out.csv", sb.ToString());
+                    File.WriteAllText("spisok_torgov.csv", sb.ToString());
 
                     //var results = command.ExecuteReader();
 
